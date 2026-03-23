@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DevPad">
+<title>DevPad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0e0e0e;
+    --surface:  #161616;
+    --border:   #2a2a2a;
+    --accent:   #e8a045;
+    --accent2:  #5b9bd5;
+    --danger:   #d45b5b;
+    --success:  #5bd48a;
+    --text:     #d4d0c8;
+    --muted:    #666;
+    --code-bg:  #121212;
+    --radius:   6px;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'Syne', sans-serif;
+  }
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+height: 100%;
+background: var(–bg);
+color: var(–text);
+font-family: var(–mono);
+font-size: 13px;
+overflow: hidden;
+}
+
+/* ── LAYOUT ─────────────────────────────────────────── */
+#app { display: flex; flex-direction: column; height: 100dvh; }
+
+header {
+display: flex; align-items: center; gap: 12px;
+padding: 10px 16px;
+border-bottom: 1px solid var(–border);
+background: var(–surface);
+flex-shrink: 0;
+}
+
+header .logo {
+font-family: var(–sans);
+font-weight: 800;
+font-size: 16px;
+color: var(–accent);
+letter-spacing: -0.5px;
+flex-shrink: 0;
+}
+
+header .repo-path {
+flex: 1;
+color: var(–muted);
+font-size: 11px;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+
+header .repo-path span { color: var(–text); }
+
+#btn-settings {
+background: none; border: 1px solid var(–border);
+color: var(–muted); padding: 4px 10px;
+border-radius: var(–radius); cursor: pointer;
+font-family: var(–mono); font-size: 11px;
+transition: all .15s;
+}
+#btn-settings:hover { border-color: var(–accent); color: var(–accent); }
+
+.workspace {
+display: flex;
+flex: 1;
+overflow: hidden;
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────── */
+#sidebar {
+width: 240px;
+flex-shrink: 0;
+display: flex;
+flex-direction: column;
+border-right: 1px solid var(–border);
+background: var(–surface);
+transition: transform .2s ease;
+}
+
+#sidebar.hidden { display: none; }
+
+.sidebar-header {
+display: flex; align-items: center; gap: 8px;
+padding: 10px 12px;
+border-bottom: 1px solid var(–border);
+}
+
+.sidebar-header select {
+flex: 1;
+background: var(–bg); color: var(–text);
+border: 1px solid var(–border); border-radius: var(–radius);
+padding: 5px 8px; font-family: var(–mono); font-size: 11px;
+cursor: pointer; outline: none;
+}
+
+.sidebar-header select:focus { border-color: var(–accent2); }
+
+#btn-new-file {
+background: none; border: 1px solid var(–border);
+color: var(–muted); width: 26px; height: 26px;
+border-radius: var(–radius); cursor: pointer;
+font-size: 16px; line-height: 1;
+display: flex; align-items: center; justify-content: center;
+transition: all .15s; flex-shrink: 0;
+}
+#btn-new-file:hover { border-color: var(–success); color: var(–success); }
+
+#file-tree {
+flex: 1;
+overflow-y: auto;
+padding: 6px 0;
+}
+
+#file-tree::-webkit-scrollbar { width: 4px; }
+#file-tree::-webkit-scrollbar-thumb { background: var(–border); border-radius: 2px; }
+
+.tree-item {
+display: flex; align-items: center; gap: 6px;
+padding: 5px 12px; cursor: pointer;
+color: var(–text); font-size: 12px;
+transition: background .1s;
+white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+user-select: none;
+}
+
+.tree-item:hover { background: rgba(255,255,255,.04); }
+.tree-item.active { background: rgba(232,160,69,.1); color: var(–accent); }
+.tree-item.dir { color: var(–accent2); }
+.tree-item .icon { font-size: 11px; flex-shrink: 0; }
+
+.tree-folder-children { padding-left: 14px; }
+
+.tree-item.loading { color: var(–muted); font-style: italic; }
+
+.sidebar-footer {
+padding: 8px 12px;
+border-top: 1px solid var(–border);
+display: flex; gap: 6px;
+}
+
+/* ── MAIN PANEL ──────────────────────────────────────── */
+#main {
+flex: 1;
+display: flex;
+flex-direction: column;
+overflow: hidden;
+}
+
+.editor-bar {
+display: flex; align-items: center; gap: 8px;
+padding: 8px 14px;
+border-bottom: 1px solid var(–border);
+background: var(–surface);
+flex-shrink: 0;
+}
+
+.file-label {
+flex: 1; font-size: 12px; color: var(–muted);
+overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.file-label span { color: var(–text); }
+
+.badge {
+font-size: 10px; padding: 2px 7px;
+border-radius: 3px; font-weight: 500;
+background: rgba(232,160,69,.15); color: var(–accent);
+border: 1px solid rgba(232,160,69,.3);
+}
+
+.badge.dirty {
+background: rgba(232,160,69,.25);
+animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+0%,100% { opacity: 1; }
+50% { opacity: .6; }
+}
+
+#editor-wrap {
+flex: 1;
+position: relative;
+overflow: hidden;
+}
+
+#editor {
+width: 100%; height: 100%;
+background: var(–code-bg);
+color: var(–text);
+border: none; outline: none; resize: none;
+font-family: var(–mono); font-size: 13px;
+line-height: 1.65;
+padding: 16px;
+tab-size: 2;
+white-space: pre;
+overflow: auto;
+}
+
+#editor::-webkit-scrollbar { width: 6px; height: 6px; }
+#editor::-webkit-scrollbar-thumb { background: var(–border); border-radius: 3px; }
+
+#editor-placeholder {
+position: absolute; inset: 0;
+display: flex; flex-direction: column;
+align-items: center; justify-content: center;
+gap: 12px; pointer-events: none;
+color: var(–muted);
+}
+
+#editor-placeholder .big { font-size: 40px; }
+#editor-placeholder p { font-size: 12px; text-align: center; line-height: 1.8; }
+
+/* ── COMMIT BAR ──────────────────────────────────────── */
+#commit-bar {
+display: flex; align-items: center; gap: 8px;
+padding: 8px 14px;
+border-top: 1px solid var(–border);
+background: var(–surface);
+flex-shrink: 0;
+}
+
+#commit-msg {
+flex: 1;
+background: var(–bg); color: var(–text);
+border: 1px solid var(–border); border-radius: var(–radius);
+padding: 6px 10px; font-family: var(–mono); font-size: 12px;
+outline: none; transition: border .15s;
+}
+
+#commit-msg:focus { border-color: var(–accent2); }
+#commit-msg::placeholder { color: var(–muted); }
+
+.btn {
+padding: 6px 14px; border-radius: var(–radius);
+border: none; cursor: pointer; font-family: var(–mono);
+font-size: 12px; font-weight: 500;
+transition: all .15s; white-space: nowrap;
+}
+
+.btn-primary {
+background: var(–accent); color: #111;
+}
+.btn-primary:hover { background: #f0b060; }
+.btn-primary:disabled { background: var(–border); color: var(–muted); cursor: not-allowed; }
+
+.btn-ghost {
+background: none; border: 1px solid var(–border); color: var(–muted);
+}
+.btn-ghost:hover { border-color: var(–text); color: var(–text); }
+
+.btn-danger {
+background: none; border: 1px solid var(–danger); color: var(–danger);
+}
+.btn-danger:hover { background: rgba(212,91,91,.15); }
+
+/* ── MOBILE TOGGLE ───────────────────────────────────── */
+#toggle-sidebar {
+display: none;
+background: none; border: 1px solid var(–border);
+color: var(–muted); width: 30px; height: 30px;
+border-radius: var(–radius); cursor: pointer;
+font-size: 14px; align-items: center; justify-content: center;
+flex-shrink: 0;
+}
+
+/* ── MODAL ───────────────────────────────────────────── */
+.modal-overlay {
+position: fixed; inset: 0; z-index: 100;
+background: rgba(0,0,0,.7);
+display: flex; align-items: center; justify-content: center;
+padding: 20px;
+backdrop-filter: blur(4px);
+animation: fadein .15s;
+}
+
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 24px;
+width: 100%; max-width: 440px;
+animation: slidein .15s;
+}
+
+@keyframes slidein { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.modal h2 {
+font-family: var(–sans);
+font-size: 18px; font-weight: 800;
+color: var(–accent); margin-bottom: 6px;
+}
+
+.modal p { color: var(–muted); font-size: 12px; line-height: 1.7; margin-bottom: 16px; }
+
+.modal label { display: block; font-size: 11px; color: var(–muted); margin-bottom: 5px; margin-top: 12px; }
+
+.modal input, .modal select {
+width: 100%; background: var(–bg); color: var(–text);
+border: 1px solid var(–border); border-radius: var(–radius);
+padding: 8px 12px; font-family: var(–mono); font-size: 13px;
+outline: none; transition: border .15s;
+}
+
+.modal input:focus, .modal select:focus { border-color: var(–accent2); }
+.modal input::placeholder { color: var(–muted); }
+
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+/* ── TOAST ───────────────────────────────────────────── */
+#toast-container {
+position: fixed; bottom: 80px; right: 16px; z-index: 200;
+display: flex; flex-direction: column; gap: 6px;
+pointer-events: none;
+}
+
+.toast {
+padding: 8px 14px; border-radius: var(–radius);
+font-size: 12px; font-family: var(–mono);
+animation: toast-in .2s, toast-out .3s 2.7s forwards;
+max-width: 280px;
+}
+
+.toast.ok  { background: rgba(91,212,138,.15); border: 1px solid var(–success); color: var(–success); }
+.toast.err { background: rgba(212,91,91,.15); border: 1px solid var(–danger); color: var(–danger); }
+.toast.inf { background: rgba(91,155,213,.15); border: 1px solid var(–accent2); color: var(–accent2); }
+
+@keyframes toast-in  { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:none; } }
+@keyframes toast-out { from { opacity:1; } to { opacity:0; } }
+
+/* ── STATUS BAR ──────────────────────────────────────── */
+#statusbar {
+padding: 3px 14px;
+background: var(–surface);
+border-top: 1px solid var(–border);
+font-size: 10px; color: var(–muted);
+display: flex; gap: 14px; align-items: center;
+flex-shrink: 0;
+}
+
+#statusbar .dot {
+width: 6px; height: 6px; border-radius: 50%;
+background: var(–muted); flex-shrink: 0;
+}
+
+#statusbar .dot.ok  { background: var(–success); }
+#statusbar .dot.err { background: var(–danger); }
+
+/* ── NEW FILE DIALOG ─────────────────────────────────── */
+/* reuses .modal */
+
+/* ── RESPONSIVE ──────────────────────────────────────── */
+@media (max-width: 600px) {
+#toggle-sidebar { display: flex; }
+#sidebar {
+position: absolute; z-index: 50;
+top: 0; left: 0; bottom: 0;
+transform: translateX(-100%);
+transition: transform .2s ease;
+}
+#sidebar.open { transform: none; }
+#sidebar.hidden { display: flex; transform: translateX(-100%); }
+}
+</style>
+
+</head>
+<body>
+<div id="app">
+  <header>
+    <button id="toggle-sidebar" onclick="toggleSidebar()" title="Files">☰</button>
+    <div class="logo">DevPad</div>
+    <div class="repo-path" id="header-path">no repo selected</div>
+    <button id="btn-settings" onclick="openSettings()">⚙ settings</button>
+  </header>
+
+  <div class="workspace">
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <select id="repo-select" onchange="loadRepo(this.value)">
+          <option value="">— select repo —</option>
+        </select>
+        <button id="btn-new-file" title="New file" onclick="openNewFile()">+</button>
+      </div>
+      <div id="file-tree">
+        <div class="tree-item loading" style="padding-top:20px;justify-content:center;">
+          connect GitHub to start
+        </div>
+      </div>
+    </div>
+
+```
+<div id="main">
+  <div class="editor-bar">
+    <div class="file-label" id="file-label">no file open</div>
+    <span class="badge" id="lang-badge" style="display:none"></span>
+    <span class="badge dirty" id="dirty-badge" style="display:none">● unsaved</span>
+    <button class="btn btn-ghost" id="btn-discard" style="display:none" onclick="discardChanges()">discard</button>
+  </div>
+
+  <div id="editor-wrap">
+    <div id="editor-placeholder">
+      <div class="big">⌥</div>
+      <p>Select a repo and file<br>to start editing</p>
+    </div>
+    <textarea id="editor" spellcheck="false" autocorrect="off" autocapitalize="off"
+      style="display:none" oninput="onEditorInput()"></textarea>
+  </div>
+
+  <div id="commit-bar">
+    <input id="commit-msg" type="text" placeholder="commit message…" />
+    <button class="btn btn-primary" id="btn-commit" onclick="commitFile()" disabled>commit</button>
+    <a id="pages-link" class="btn btn-ghost" style="display:none;text-decoration:none"
+       target="_blank">↗ open</a>
+  </div>
+</div>
+```
+
+  </div>
+
+  <div id="statusbar">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-text">not connected</span>
+    <span id="status-file" style="margin-left:auto"></span>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- SETTINGS MODAL -->
+
+<div id="modal-settings" class="modal-overlay" style="display:none" onclick="closeSettingsOnBg(event)">
+  <div class="modal">
+    <h2>Settings</h2>
+    <p>Your GitHub Personal Access Token is stored locally in this browser only. Generate one at github.com/settings/tokens — needs <strong>repo</strong> scope.</p>
+    <label>GitHub Token</label>
+    <input id="input-token" type="password" placeholder="ghp_…" autocomplete="off" />
+    <label>Default branch (optional)</label>
+    <input id="input-branch" type="text" placeholder="main" />
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeSettings()">cancel</button>
+      <button class="btn btn-primary" onclick="saveSettings()">save & connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW FILE MODAL -->
+
+<div id="modal-newfile" class="modal-overlay" style="display:none" onclick="closeNewFileOnBg(event)">
+  <div class="modal">
+    <h2>New file</h2>
+    <p>Creates a new file in the current repo and commits it immediately.</p>
+    <label>File path (e.g. src/app.js or index.html)</label>
+    <input id="input-newpath" type="text" placeholder="path/to/file.js" autocorrect="off" autocapitalize="off" />
+    <label>Initial content (optional)</label>
+    <textarea id="input-newcontent" rows="4"
+      style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);
+             border-radius:var(--radius);padding:8px 12px;font-family:var(--mono);font-size:12px;
+             outline:none;resize:vertical;margin-top:2px;"
+      placeholder="# Hello"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeNewFile()">cancel</button>
+      <button class="btn btn-primary" onclick="createNewFile()">create file</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+const state = {
+  token: '',
+  branch: 'main',
+  user: null,
+  repos: [],
+  currentRepo: null,   // {owner, name, default_branch}
+  currentFile: null,   // {path, sha, content}
+  dirty: false,
+};
+
+/* ═══════════════════════════════════════════════════════
+   GITHUB API
+═══════════════════════════════════════════════════════ */
+async function gh(path, opts = {}) {
+  const url = path.startsWith('http') ? path : `https://api.github.com${path}`;
+  const res = await fetch(url, {
+    ...opts,
+    headers: {
+      'Authorization': `Bearer ${state.token}`,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      ...(opts.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(err.message || res.statusText);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════ */
+window.onload = () => {
+  state.token  = localStorage.getItem('dp_token')  || '';
+  state.branch = localStorage.getItem('dp_branch') || 'main';
+  if (state.token) connectGitHub();
+};
+
+/* ═══════════════════════════════════════════════════════
+   CONNECT
+═══════════════════════════════════════════════════════ */
+async function connectGitHub() {
+  setStatus('connecting…', '');
+  try {
+    state.user = await gh('/user');
+    setStatus(`connected as ${state.user.login}`, 'ok');
+    toast(`Welcome, ${state.user.login}`, 'ok');
+    await loadRepos();
+  } catch (e) {
+    setStatus('connection failed', 'err');
+    toast('GitHub error: ' + e.message, 'err');
+  }
+}
+
+async function loadRepos() {
+  try {
+    // fetch up to 100 repos
+    const repos = await gh('/user/repos?per_page=100&sort=updated');
+    state.repos = repos;
+    const sel = document.getElementById('repo-select');
+    sel.innerHTML = '<option value="">— select repo —</option>';
+    repos.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.full_name;
+      opt.textContent = r.name;
+      sel.appendChild(opt);
+    });
+    setTree([{ type: 'msg', text: 'select a repo above' }]);
+  } catch (e) {
+    toast('Could not load repos: ' + e.message, 'err');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   REPO / TREE
+═══════════════════════════════════════════════════════ */
+async function loadRepo(fullName) {
+  if (!fullName) return;
+  const repo = state.repos.find(r => r.full_name === fullName);
+  if (!repo) return;
+  state.currentRepo = { owner: repo.owner.login, name: repo.name, default_branch: repo.default_branch };
+  state.branch = localStorage.getItem('dp_branch') || repo.default_branch;
+
+  document.getElementById('header-path').innerHTML =
+    `<span>${repo.full_name}</span> <span style="color:var(--accent2)">:${state.branch}</span>`;
+
+  setTree([{ type: 'msg', text: 'loading tree…' }]);
+
+  try {
+    const tree = await gh(
+      `/repos/${state.currentRepo.owner}/${state.currentRepo.name}/git/trees/${state.branch}?recursive=1`
+    );
+    renderTree(tree.tree);
+    updatePagesLink();
+  } catch (e) {
+    toast('Tree error: ' + e.message, 'err');
+    setTree([{ type: 'msg', text: 'failed to load tree' }]);
+  }
+}
+
+function renderTree(items) {
+  // Build nested structure
+  const root = {};
+  items.filter(i => i.type === 'blob').forEach(item => {
+    const parts = item.path.split('/');
+    let node = root;
+    parts.forEach((p, idx) => {
+      if (idx === parts.length - 1) {
+        node[p] = { __file: true, path: item.path };
+      } else {
+        node[p] = node[p] || {};
+      }
+      node = node[p];
+    });
+  });
+
+  const container = document.getElementById('file-tree');
+  container.innerHTML = '';
+  buildTreeDOM(root, container, '');
+}
+
+function buildTreeDOM(node, container, prefix) {
+  // Dirs first, then files
+  const entries = Object.entries(node);
+  const dirs  = entries.filter(([,v]) => !v.__file);
+  const files = entries.filter(([,v]) => v.__file);
+
+  [...dirs, ...files].forEach(([name, val]) => {
+    if (val.__file) {
+      const el = document.createElement('div');
+      el.className = 'tree-item';
+      el.dataset.path = val.path;
+      el.innerHTML = `<span class="icon">${fileIcon(name)}</span>${name}`;
+      el.onclick = () => openFile(val.path, el);
+      container.appendChild(el);
+    } else {
+      const dir = document.createElement('div');
+      dir.className = 'tree-item dir';
+      dir.innerHTML = `<span class="icon">▸</span>${name}`;
+      container.appendChild(dir);
+
+      const children = document.createElement('div');
+      children.className = 'tree-folder-children';
+      children.style.display = 'none';
+      container.appendChild(children);
+
+      dir.onclick = () => {
+        const open = children.style.display !== 'none';
+        children.style.display = open ? 'none' : 'block';
+        dir.querySelector('.icon').textContent = open ? '▸' : '▾';
+      };
+
+      buildTreeDOM(val, children, prefix + name + '/');
+    }
+  });
+}
+
+function setTree(items) {
+  const container = document.getElementById('file-tree');
+  container.innerHTML = '';
+  items.forEach(i => {
+    if (i.type === 'msg') {
+      const el = document.createElement('div');
+      el.className = 'tree-item loading';
+      el.style.justifyContent = 'center';
+      el.style.paddingTop = '20px';
+      el.textContent = i.text;
+      container.appendChild(el);
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   FILE OPEN / EDIT
+═══════════════════════════════════════════════════════ */
+async function openFile(path, el) {
+  if (state.dirty && !confirm('Discard unsaved changes?')) return;
+
+  // Highlight active
+  document.querySelectorAll('.tree-item.active').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+
+  // Close sidebar on mobile
+  if (window.innerWidth <= 600) document.getElementById('sidebar').classList.remove('open');
+
+  try {
+    const data = await gh(
+      `/repos/${state.currentRepo.owner}/${state.currentRepo.name}/contents/${path}?ref=${state.branch}`
+    );
+    const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
+    state.currentFile = { path: data.path, sha: data.sha, content };
+
+    const editor = document.getElementById('editor');
+    editor.value = content;
+    editor.style.display = 'block';
+    document.getElementById('editor-placeholder').style.display = 'none';
+
+    document.getElementById('file-label').innerHTML = `<span>${path}</span>`;
+    document.getElementById('lang-badge').textContent = langFromPath(path);
+    document.getElementById('lang-badge').style.display = '';
+
+    setDirty(false);
+    document.getElementById('status-file').textContent = path;
+    document.getElementById('commit-msg').value = `update ${path.split('/').pop()}`;
+    document.getElementById('btn-commit').disabled = false;
+  } catch (e) {
+    toast('Could not open file: ' + e.message, 'err');
+  }
+}
+
+function onEditorInput() {
+  if (!state.currentFile) return;
+  const changed = document.getElementById('editor').value !== state.currentFile.content;
+  setDirty(changed);
+}
+
+function setDirty(val) {
+  state.dirty = val;
+  document.getElementById('dirty-badge').style.display  = val ? '' : 'none';
+  document.getElementById('btn-discard').style.display  = val ? '' : 'none';
+}
+
+function discardChanges() {
+  if (!state.currentFile) return;
+  document.getElementById('editor').value = state.currentFile.content;
+  setDirty(false);
+  toast('Changes discarded', 'inf');
+}
+
+/* ═══════════════════════════════════════════════════════
+   COMMIT
+═══════════════════════════════════════════════════════ */
+async function commitFile() {
+  if (!state.currentFile || !state.currentRepo) return;
+  const content = document.getElementById('editor').value;
+  const message = document.getElementById('commit-msg').value.trim() || `update ${state.currentFile.path}`;
+  const btn = document.getElementById('btn-commit');
+  btn.disabled = true;
+  btn.textContent = 'committing…';
+
+  try {
+    const encoded = btoa(unescape(encodeURIComponent(content)));
+    const res = await gh(
+      `/repos/${state.currentRepo.owner}/${state.currentRepo.name}/contents/${state.currentFile.path}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          content: encoded,
+          sha: state.currentFile.sha,
+          branch: state.branch,
+        }),
+      }
+    );
+    state.currentFile.sha = res.content.sha;
+    state.currentFile.content = content;
+    setDirty(false);
+    toast('Committed ✓', 'ok');
+  } catch (e) {
+    toast('Commit failed: ' + e.message, 'err');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'commit';
+}
+
+/* ═══════════════════════════════════════════════════════
+   NEW FILE
+═══════════════════════════════════════════════════════ */
+function openNewFile() {
+  if (!state.currentRepo) { toast('Select a repo first', 'inf'); return; }
+  document.getElementById('input-newpath').value = '';
+  document.getElementById('input-newcontent').value = '';
+  document.getElementById('modal-newfile').style.display = 'flex';
+}
+
+function closeNewFile() { document.getElementById('modal-newfile').style.display = 'none'; }
+function closeNewFileOnBg(e) { if (e.target === e.currentTarget) closeNewFile(); }
+
+async function createNewFile() {
+  const path = document.getElementById('input-newpath').value.trim();
+  if (!path) { toast('Enter a file path', 'inf'); return; }
+  const content = document.getElementById('input-newcontent').value;
+
+  try {
+    await gh(
+      `/repos/${state.currentRepo.owner}/${state.currentRepo.name}/contents/${path}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `create ${path}`,
+          content: btoa(unescape(encodeURIComponent(content))),
+          branch: state.branch,
+        }),
+      }
+    );
+    toast(`Created ${path}`, 'ok');
+    closeNewFile();
+    await loadRepo(`${state.currentRepo.owner}/${state.currentRepo.name}`);
+  } catch (e) {
+    toast('Create failed: ' + e.message, 'err');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SETTINGS
+═══════════════════════════════════════════════════════ */
+function openSettings() {
+  document.getElementById('input-token').value = state.token;
+  document.getElementById('input-branch').value = state.branch;
+  document.getElementById('modal-settings').style.display = 'flex';
+}
+
+function closeSettings() { document.getElementById('modal-settings').style.display = 'none'; }
+function closeSettingsOnBg(e) { if (e.target === e.currentTarget) closeSettings(); }
+
+async function saveSettings() {
+  const token  = document.getElementById('input-token').value.trim();
+  const branch = document.getElementById('input-branch').value.trim() || 'main';
+  if (!token) { toast('Token required', 'err'); return; }
+  state.token  = token;
+  state.branch = branch;
+  localStorage.setItem('dp_token',  token);
+  localStorage.setItem('dp_branch', branch);
+  closeSettings();
+  await connectGitHub();
+}
+
+/* ═══════════════════════════════════════════════════════
+   GITHUB PAGES LINK
+═══════════════════════════════════════════════════════ */
+function updatePagesLink() {
+  if (!state.currentRepo) return;
+  const link = document.getElementById('pages-link');
+  const url = `https://${state.currentRepo.owner}.github.io/${state.currentRepo.name}/`;
+  link.href = url;
+  link.style.display = '';
+  link.title = url;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SIDEBAR TOGGLE (mobile)
+═══════════════════════════════════════════════════════ */
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+/* ═══════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════ */
+function setStatus(text, state) {
+  document.getElementById('status-text').textContent = text;
+  const dot = document.getElementById('status-dot');
+  dot.className = 'dot' + (state ? ' ' + state : '');
+}
+
+function toast(msg, type = 'inf') {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+function fileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const map = {
+    js:'📜', ts:'📘', jsx:'⚛', tsx:'⚛', html:'🌐', css:'🎨',
+    json:'📋', md:'📝', py:'🐍', sh:'⚙', yml:'⚙', yaml:'⚙',
+    svg:'🖼', png:'🖼', jpg:'🖼', jpeg:'🖼', gif:'🖼', txt:'📄',
+  };
+  return map[ext] || '📄';
+}
+
+function langFromPath(path) {
+  const ext = path.split('.').pop().toLowerCase();
+  const map = {
+    js:'JavaScript', ts:'TypeScript', jsx:'React', tsx:'React',
+    html:'HTML', css:'CSS', json:'JSON', md:'Markdown',
+    py:'Python', sh:'Shell', yml:'YAML', yaml:'YAML',
+    svg:'SVG', txt:'Text',
+  };
+  return map[ext] || ext.toUpperCase();
+}
+
+// Keyboard shortcut: Cmd/Ctrl+S to commit
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+    e.preventDefault();
+    if (!document.getElementById('btn-commit').disabled) commitFile();
+  }
+});
+</script>
+
+</body>
+</html>
