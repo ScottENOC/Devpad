@@ -1,896 +1,239 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="DevPad">
-<title>DevPad</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg:       #0e0e0e;
-    --surface:  #161616;
-    --border:   #2a2a2a;
-    --accent:   #e8a045;
-    --accent2:  #5b9bd5;
-    --danger:   #d45b5b;
-    --success:  #5bd48a;
-    --text:     #d4d0c8;
-    --muted:    #666;
-    --code-bg:  #121212;
-    --radius:   6px;
-    --mono:     'IBM Plex Mono', monospace;
-    --sans:     'Syne', sans-serif;
-    --sat: env(safe-area-inset-top,    0px);
-    --sab: env(safe-area-inset-bottom, 0px);
-    --sal: env(safe-area-inset-left,   0px);
-    --sar: env(safe-area-inset-right,  0px);
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DevPad">
+    <title>DevPad</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0e0e0e;
+            --surface: #161616;
+            --border: #2a2a2a;
+            --accent: #e8a045;
+            --accent2: #5b9bd5;
+            --danger: #d45b5b;
+            --success: #5bd48a;
+            --text: #d4d0c8;
+            --muted: #666;
+            --code-bg: #121212;
+            --radius: 6px;
+            --mono: 'IBM Plex Mono', monospace;
+            --sans: 'Syne', sans-serif;
+            --sat: env(safe-area-inset-top, 0px);
+            --sab: env(safe-area-inset-bottom, 0px);
+            --sal: env(safe-area-inset-left, 0px);
+            --sar: env(safe-area-inset-right, 0px);
+        }
 
-- { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body {
-height: 100%; background: var(–bg); color: var(–text);
-font-family: var(–mono); font-size: 13px; overflow: hidden;
-}
+        html, body {
+            height: 100%; background: var(--bg); color: var(--text);
+            font-family: var(--mono); font-size: 13px; overflow: hidden;
+        }
 
-#app { display: flex; flex-direction: column; height: 100dvh; }
+        #app { display: flex; flex-direction: column; height: 100dvh; }
 
-/* ── HEADER ─────────────────────────────────────────── */
-header {
-display: flex; align-items: center; gap: 10px;
-padding-top: calc(10px + var(–sat));
-padding-bottom: 10px;
-padding-left: calc(14px + var(–sal));
-padding-right: calc(14px + var(–sar));
-border-bottom: 1px solid var(–border);
-background: var(–surface); flex-shrink: 0;
-}
+        header {
+            display: flex; align-items: center; gap: 10px;
+            padding: calc(10px + var(--sat)) calc(14px + var(--sar)) 10px calc(14px + var(--sal));
+            border-bottom: 1px solid var(--border);
+            background: var(--surface); flex-shrink: 0;
+        }
 
-.logo { font-family:var(–sans); font-weight:800; font-size:16px; color:var(–accent); letter-spacing:-0.5px; flex-shrink:0; }
+        .logo { font-family: var(--sans); font-weight: 800; font-size: 16px; color: var(--accent); letter-spacing: -0.5px; }
 
-#header-path { flex:1; color:var(–muted); font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-#header-path span { color:var(–text); }
+        #header-path { flex: 1; color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #header-path span { color: var(--text); }
 
-#btn-settings {
-background:none; border:1px solid var(–border); color:var(–muted);
-padding:4px 10px; border-radius:var(–radius); cursor:pointer;
-font-family:var(–mono); font-size:11px; transition:all .15s;
-}
-#btn-settings:hover { border-color:var(–accent); color:var(–accent); }
+        .workspace { display: flex; flex: 1; overflow: hidden; }
 
-/* ── WORKSPACE ───────────────────────────────────────── */
-.workspace { display:flex; flex:1; overflow:hidden; }
+        #sidebar {
+            width: 220px; flex-shrink: 0; display: flex; flex-direction: column;
+            border-right: 1px solid var(--border); background: var(--surface);
+        }
 
-/* ── SIDEBAR ─────────────────────────────────────────── */
-#sidebar {
-width:220px; flex-shrink:0; display:flex; flex-direction:column;
-border-right:1px solid var(–border); background:var(–surface);
-}
+        .sidebar-header { display: flex; align-items: center; gap: 6px; padding: 10px; border-bottom: 1px solid var(--border); }
+        .sidebar-header select {
+            flex: 1; background: var(--bg); color: var(--text);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 5px 6px; font-family: var(--mono); font-size: 11px;
+        }
 
-.sidebar-header { display:flex; align-items:center; gap:6px; padding:10px; border-bottom:1px solid var(–border); }
+        #file-tree { flex: 1; overflow-y: auto; padding: 6px 0; }
+        .tree-item {
+            display: flex; align-items: center; gap: 6px; padding: 5px 12px; cursor: pointer;
+            font-size: 12px; transition: background .1s; white-space: nowrap;
+        }
+        .tree-item:hover { background: rgba(255,255,255,.04); }
+        .tree-item.active { background: rgba(232,160,69,.1); color: var(--accent); }
 
-.sidebar-header select {
-flex:1; background:var(–bg); color:var(–text);
-border:1px solid var(–border); border-radius:var(–radius);
-padding:5px 6px; font-family:var(–mono); font-size:11px; cursor:pointer; outline:none;
-}
-.sidebar-header select:focus { border-color:var(–accent2); }
+        #centre { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #tab-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); }
+        .tab { padding: 8px 20px; font-size: 12px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-#btn-new-file {
-background:none; border:1px solid var(–border); color:var(–muted);
-width:26px; height:26px; border-radius:var(–radius); cursor:pointer; font-size:16px;
-display:flex; align-items:center; justify-content:center; transition:all .15s; flex-shrink:0;
-}
-#btn-new-file:hover { border-color:var(–success); color:var(–success); }
+        #editor-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #editor {
+            flex: 1; background: var(--code-bg); color: var(--text); border: none; outline: none;
+            font-family: var(--mono); font-size: 13px; padding: 16px; tab-size: 2; white-space: pre; overflow: auto;
+        }
 
-#file-tree { flex:1; overflow-y:auto; padding:6px 0; }
-#file-tree::-webkit-scrollbar { width:4px; }
-#file-tree::-webkit-scrollbar-thumb { background:var(–border); border-radius:2px; }
+        #chat-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+        #chat-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+        .msg { max-width: 90%; padding: 10px 13px; border-radius: 8px; font-size: 12px; line-height: 1.6; }
+        .msg.user { align-self: flex-end; background: rgba(232,160,69,.12); border: 1px solid rgba(232,160,69,.2); }
+        .msg.ai { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); }
 
-.tree-item {
-display:flex; align-items:center; gap:6px; padding:5px 12px; cursor:pointer;
-color:var(–text); font-size:12px; transition:background .1s;
-white-space:nowrap; overflow:hidden; text-overflow:ellipsis; user-select:none;
-}
-.tree-item:hover  { background:rgba(255,255,255,.04); }
-.tree-item.active { background:rgba(232,160,69,.1); color:var(–accent); }
-.tree-item.dir    { color:var(–accent2); }
-.tree-item .icon  { font-size:11px; flex-shrink:0; }
-.tree-folder-children { padding-left:14px; }
-.tree-item.loading { color:var(–muted); font-style:italic; }
+        #chat-input-area {
+            padding: 10px calc(14px + var(--sar)) calc(10px + var(--sab)) calc(14px + var(--sal));
+            background: var(--surface); border-top: 1px solid var(--border);
+            display: flex; gap: 8px;
+        }
+        #chat-input {
+            flex: 1; background: var(--bg); color: var(--text); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 8px 12px; font-family: var(--mono); outline: none;
+        }
 
-/* ── CENTRE ──────────────────────────────────────────── */
-#centre { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-
-#tab-bar { display:flex; border-bottom:1px solid var(–border); background:var(–surface); flex-shrink:0; }
-
-.tab {
-padding:8px 20px; font-size:12px; cursor:pointer; color:var(–muted);
-border-bottom:2px solid transparent; transition:all .15s; user-select:none;
-}
-.tab.active { color:var(–accent); border-bottom-color:var(–accent); }
-.tab:hover:not(.active) { color:var(–text); }
-
-/* ── EDITOR VIEW ─────────────────────────────────────── */
-#editor-view { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-#editor-view.hidden { display:none; }
-
-.editor-bar {
-display:flex; align-items:center; gap:8px; padding:7px 14px;
-border-bottom:1px solid var(–border); background:var(–surface); flex-shrink:0;
-}
-.file-label { flex:1; font-size:12px; color:var(–muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.file-label span { color:var(–text); }
-
-.badge { font-size:10px; padding:2px 7px; border-radius:3px; font-weight:500; background:rgba(232,160,69,.15); color:var(–accent); border:1px solid rgba(232,160,69,.3); }
-.badge.dirty { background:rgba(232,160,69,.25); animation:pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
-
-#editor-wrap { flex:1; position:relative; overflow:hidden; }
-
-#editor {
-width:100%; height:100%; background:var(–code-bg); color:var(–text);
-border:none; outline:none; resize:none; font-family:var(–mono); font-size:13px;
-line-height:1.65; padding:16px; tab-size:2; white-space:pre; overflow:auto;
-}
-#editor::-webkit-scrollbar { width:6px; height:6px; }
-#editor::-webkit-scrollbar-thumb { background:var(–border); border-radius:3px; }
-
-#editor-placeholder {
-position:absolute; inset:0; display:flex; flex-direction:column;
-align-items:center; justify-content:center; gap:12px; pointer-events:none; color:var(–muted);
-}
-#editor-placeholder .big { font-size:40px; }
-#editor-placeholder p { font-size:12px; text-align:center; line-height:1.8; }
-
-#commit-bar {
-display:flex; align-items:center; gap:8px;
-padding: 8px 14px calc(8px + var(–sab));
-padding-left:calc(14px + var(–sal)); padding-right:calc(14px + var(–sar));
-border-top:1px solid var(–border); background:var(–surface); flex-shrink:0;
-}
-#commit-msg {
-flex:1; background:var(–bg); color:var(–text); border:1px solid var(–border);
-border-radius:var(–radius); padding:6px 10px; font-family:var(–mono); font-size:12px;
-outline:none; transition:border .15s;
-}
-#commit-msg:focus { border-color:var(–accent2); }
-#commit-msg::placeholder { color:var(–muted); }
-
-/* ── CHAT VIEW ───────────────────────────────────────── */
-#chat-view { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-#chat-view.hidden { display:none; }
-
-#chat-toolbar {
-display:flex; align-items:center; gap:8px; padding:7px 14px;
-border-bottom:1px solid var(–border); background:var(–surface); flex-shrink:0;
-}
-
-#chat-toolbar select {
-background:var(–bg); color:var(–text); border:1px solid var(–border);
-border-radius:var(–radius); padding:4px 8px; font-family:var(–mono); font-size:11px;
-outline:none; cursor:pointer;
-}
-#chat-toolbar select:focus { border-color:var(–accent2); }
-
-.ctx-pill {
-font-size:10px; padding:3px 8px; border-radius:3px;
-background:rgba(91,155,213,.1); color:var(–accent2); border:1px solid rgba(91,155,213,.3);
-display:flex; align-items:center; gap:4px; white-space:nowrap;
-}
-
-#chat-messages {
-flex:1; overflow-y:auto; padding:12px 14px;
-display:flex; flex-direction:column; gap:12px;
-}
-#chat-messages::-webkit-scrollbar { width:4px; }
-#chat-messages::-webkit-scrollbar-thumb { background:var(–border); border-radius:2px; }
-
-.msg {
-max-width:94%; padding:10px 13px; border-radius:8px;
-font-size:12px; line-height:1.7; word-break:break-word;
-}
-.msg.user      { align-self:flex-end; background:rgba(232,160,69,.12); border:1px solid rgba(232,160,69,.25); color:var(–text); white-space:pre-wrap; }
-.msg.assistant { align-self:flex-start; background:var(–surface); border:1px solid var(–border); color:var(–text); }
-.msg.error     { align-self:flex-start; background:rgba(212,91,91,.1); border:1px solid rgba(212,91,91,.3); color:var(–danger); }
-.msg.thinking  { align-self:flex-start; color:var(–muted); font-style:italic; font-size:11px; background:none; border:none; padding:4px 0; animation:pulse 1.5s infinite; }
-
-.msg.assistant .prose { white-space:pre-wrap; }
-.msg pre {
-background:var(–code-bg); border:1px solid var(–border);
-border-radius:4px; padding:10px; margin-top:8px; overflow-x:auto; font-size:11px; white-space:pre;
-}
-.msg-actions { margin-top:10px; display:flex; gap:6px; flex-wrap:wrap; }
-
-#chat-input-row {
-display:flex; gap:8px; align-items:flex-end;
-padding: 10px 14px calc(10px + var(–sab));
-padding-left:calc(14px + var(–sal)); padding-right:calc(14px + var(–sar));
-border-top:1px solid var(–border); background:var(–surface);
-}
-#chat-input {
-flex:1; background:var(–bg); color:var(–text); border:1px solid var(–border);
-border-radius:var(–radius); padding:8px 10px; font-family:var(–mono); font-size:12px;
-outline:none; resize:none; line-height:1.5; max-height:120px; overflow-y:auto; transition:border .15s;
-}
-#chat-input:focus { border-color:var(–accent2); }
-#chat-input::placeholder { color:var(–muted); }
-
-/* ── BUTTONS ─────────────────────────────────────────── */
-.btn {
-padding:6px 14px; border-radius:var(–radius); border:none; cursor:pointer;
-font-family:var(–mono); font-size:12px; font-weight:500; transition:all .15s; white-space:nowrap;
-}
-.btn-primary { background:var(–accent); color:#111; }
-.btn-primary:hover { background:#f0b060; }
-.btn-primary:disabled { background:var(–border); color:var(–muted); cursor:not-allowed; }
-.btn-ghost { background:none; border:1px solid var(–border); color:var(–muted); }
-.btn-ghost:hover { border-color:var(–text); color:var(–text); }
-.btn-sm { padding:3px 9px; font-size:11px; }
-.btn-teal { background:rgba(91,155,213,.15); border:1px solid rgba(91,155,213,.4); color:var(–accent2); }
-.btn-teal:hover { background:rgba(91,155,213,.28); }
-
-/* ── MOBILE TOGGLE ───────────────────────────────────── */
-#toggle-sidebar {
-display:none; background:none; border:1px solid var(–border); color:var(–muted);
-width:30px; height:30px; border-radius:var(–radius); cursor:pointer; font-size:14px;
-align-items:center; justify-content:center; flex-shrink:0;
-}
-
-/* ── STATUS BAR ──────────────────────────────────────── */
-#statusbar {
-padding: 3px calc(14px + var(–sar)) calc(3px + var(–sab)) calc(14px + var(–sal));
-background:var(–surface); border-top:1px solid var(–border);
-font-size:10px; color:var(–muted); display:flex; gap:14px; align-items:center; flex-shrink:0;
-}
-.dot { width:6px; height:6px; border-radius:50%; background:var(–muted); flex-shrink:0; }
-.dot.ok  { background:var(–success); }
-.dot.err { background:var(–danger); }
-
-/* ── MODALS ──────────────────────────────────────────── */
-.modal-overlay {
-position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.75);
-display:flex; align-items:center; justify-content:center;
-padding:20px; backdrop-filter:blur(4px); animation:fadein .15s;
-}
-@keyframes fadein { from{opacity:0} to{opacity:1} }
-
-.modal {
-background:var(–surface); border:1px solid var(–border); border-radius:10px;
-padding:24px; width:100%; max-width:460px;
-max-height:calc(100dvh - 40px); overflow-y:auto; animation:slidein .15s;
-}
-@keyframes slidein { from{transform:translateY(12px);opacity:0} to{transform:none;opacity:1} }
-
-.modal h2 { font-family:var(–sans); font-size:18px; font-weight:800; color:var(–accent); margin-bottom:6px; }
-.modal p  { color:var(–muted); font-size:12px; line-height:1.7; }
-.modal label { display:block; font-size:11px; color:var(–muted); margin-bottom:4px; margin-top:14px; }
-.section-head { font-size:10px; color:var(–accent2); margin-top:20px; margin-bottom:2px; letter-spacing:.08em; text-transform:uppercase; }
-
-.modal input, .modal select {
-width:100%; background:var(–bg); color:var(–text); border:1px solid var(–border);
-border-radius:var(–radius); padding:8px 12px; font-family:var(–mono); font-size:13px; outline:none; transition:border .15s;
-}
-.modal input:focus { border-color:var(–accent2); }
-.modal input::placeholder { color:var(–muted); }
-.modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:20px; }
-
-/* ── TOAST ───────────────────────────────────────────── */
-#toast-container {
-position:fixed; bottom:calc(56px + var(–sab)); right:16px; z-index:200;
-display:flex; flex-direction:column; gap:6px; pointer-events:none;
-}
-.toast { padding:8px 14px; border-radius:var(–radius); font-size:12px; animation:toast-in .2s, toast-out .3s 2.7s forwards; max-width:300px; }
-.toast.ok  { background:rgba(91,212,138,.15); border:1px solid var(–success); color:var(–success); }
-.toast.err { background:rgba(212,91,91,.15);  border:1px solid var(–danger);  color:var(–danger); }
-.toast.inf { background:rgba(91,155,213,.15); border:1px solid var(–accent2); color:var(–accent2); }
-@keyframes toast-in  { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:none} }
-@keyframes toast-out { from{opacity:1} to{opacity:0} }
-
-/* ── RESPONSIVE ──────────────────────────────────────── */
-@media (max-width:640px) {
-#toggle-sidebar { display:flex; }
-#sidebar {
-position:absolute; z-index:50; top:0; left:0; bottom:0;
-transform:translateX(-100%); transition:transform .2s ease;
-}
-#sidebar.open { transform:none; }
-}
-</style>
-
+        .hidden { display: none !important; }
+    </style>
 </head>
 <body>
-<div id="app">
-  <header>
-    <button id="toggle-sidebar" onclick="toggleSidebar()">☰</button>
-    <div class="logo">DevPad</div>
-    <div id="header-path">no repo selected</div>
-    <button id="btn-settings" onclick="openSettings()">⚙ settings</button>
-  </header>
+    <div id="app">
+        <header>
+            <div class="logo">DevPad</div>
+            <div id="header-path">/ project / <span>index.html</span></div>
+        </header>
 
-  <div class="workspace">
-    <div id="sidebar">
-      <div class="sidebar-header">
-        <select id="repo-select" onchange="loadRepo(this.value)">
-          <option value="">— repo —</option>
-        </select>
-        <button id="btn-new-file" title="New file" onclick="openNewFile()">+</button>
-      </div>
-      <div id="file-tree">
-        <div class="tree-item loading" style="justify-content:center;padding-top:24px">connect GitHub first</div>
-      </div>
+        <div class="workspace">
+            <aside id="sidebar">
+                <div class="sidebar-header">
+                    <select id="project-selector"><option>My Project</option></select>
+                </div>
+                <div id="file-tree"></div>
+            </aside>
+
+            <main id="centre">
+                <div id="tab-bar">
+                    <div class="tab active" onclick="setView('editor')">Editor</div>
+                    <div class="tab" onclick="setView('chat')">AI Chat</div>
+                </div>
+
+                <div id="editor-view">
+                    <textarea id="editor" spellcheck="false"></textarea>
+                </div>
+
+                <div id="chat-view" class="hidden">
+                    <div id="chat-messages"></div>
+                    <div id="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="Ask AI about this project...">
+                    </div>
+                </div>
+            </main>
+        </div>
     </div>
 
-```
-<div id="centre">
-  <div id="tab-bar">
-    <div class="tab active" id="tab-editor" onclick="switchTab('editor')">Editor</div>
-    <div class="tab" id="tab-chat" onclick="switchTab('chat')">Chat</div>
-  </div>
+    <script>
+        const state = {
+            files: {
+                'index.html': '<!DOCTYPE html>\n<html>\n<body>\n  <h1>Hello</h1>\n</body>\n</html>',
+                'style.css': 'body { background: black; }',
+                'js/app.js': 'console.log("ready");'
+            },
+            activeFile: 'index.html',
+            view: 'editor'
+        };
 
-  <!-- EDITOR -->
-  <div id="editor-view">
-    <div class="editor-bar">
-      <div class="file-label" id="file-label">no file open</div>
-      <span class="badge" id="lang-badge" style="display:none"></span>
-      <span class="badge dirty" id="dirty-badge" style="display:none">● unsaved</span>
-      <button class="btn btn-ghost btn-sm" id="btn-discard" style="display:none" onclick="discardChanges()">discard</button>
-    </div>
-    <div id="editor-wrap">
-      <div id="editor-placeholder">
-        <div class="big">⌥</div>
-        <p>Select a repo and open a file<br>to start editing</p>
-      </div>
-      <textarea id="editor" spellcheck="false" autocorrect="off" autocapitalize="off"
-        style="display:none" oninput="onEditorInput()"></textarea>
-    </div>
-    <div id="commit-bar">
-      <input id="commit-msg" type="text" placeholder="commit message…" />
-      <button class="btn btn-primary" id="btn-commit" onclick="commitFile()" disabled>commit</button>
-      <a id="pages-link" class="btn btn-ghost" style="display:none;text-decoration:none" target="_blank">↗ open</a>
-    </div>
-  </div>
+        const editor = document.getElementById('editor');
+        const fileTree = document.getElementById('file-tree');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
 
-  <!-- CHAT -->
-  <div id="chat-view" class="hidden">
-    <div id="chat-toolbar">
-      <select id="llm-provider" onchange="onProviderChange()">
-        <option value="gemini">Gemini</option>
-        <option value="openai">OpenAI</option>
-        <option value="claude">Claude</option>
-      </select>
-      <select id="llm-model"></select>
-      <div class="ctx-pill">📎 <span id="ctx-name">no file</span></div>
-      <button class="btn btn-ghost btn-sm" onclick="clearChat()" style="margin-left:auto">clear</button>
-    </div>
-    <div id="chat-messages">
-      <div class="msg assistant">
-        <span class="prose">👋 Open a file in the Editor tab and I'll include it as context. Ask me to explain, refactor, fix bugs, or write new code — then tap <strong>Apply to editor</strong> to use my code.</span>
-      </div>
-    </div>
-    <div id="chat-input-row">
-      <textarea id="chat-input" rows="1" placeholder="Ask about your code…"
-        oninput="autoResize(this)" onkeydown="chatKeydown(event)"></textarea>
-      <button class="btn btn-primary" onclick="sendChat()">↑</button>
-    </div>
-  </div>
-</div>
-```
+        function init() {
+            renderTree();
+            loadFile(state.activeFile);
+            
+            chatInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter') sendMessage();
+            });
+        }
 
-  </div>
+        function renderTree() {
+            fileTree.innerHTML = Object.keys(state.files).map(path => `
+                <div class="tree-item ${path === state.activeFile ? 'active' : ''}" onclick="loadFile('${path}')">
+                    ${path}
+                </div>
+            `).join('');
+        }
 
-  <div id="statusbar">
-    <div class="dot" id="status-dot"></div>
-    <span id="status-text">not connected</span>
-    <span id="status-file" style="margin-left:auto"></span>
-  </div>
-</div>
+        function loadFile(path) {
+            // Save current
+            if (state.activeFile) state.files[state.activeFile] = editor.value;
+            
+            state.activeFile = path;
+            editor.value = state.files[path];
+            document.querySelector('#header-path span').textContent = path;
+            renderTree();
+        }
 
-<div id="toast-container"></div>
+        function setView(view) {
+            state.view = view;
+            document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (i === 0 && view === 'editor') || (i === 1 && view === 'chat')));
+            document.getElementById('editor-view').classList.toggle('hidden', view !== 'editor');
+            document.getElementById('chat-view').classList.toggle('hidden', view !== 'chat');
+        }
 
-<!-- SETTINGS -->
+        async function sendMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
 
-<div id="modal-settings" class="modal-overlay" style="display:none" onclick="closeSettingsOnBg(event)">
-  <div class="modal">
-    <h2>Settings</h2>
+            addMessage('user', text);
+            chatInput.value = '';
 
-```
-<div class="section-head">GitHub</div>
-<p>Personal Access Token with <strong>repo</strong> scope. Generate at github.com/settings/tokens.</p>
-<label>GitHub Token</label>
-<input id="input-token" type="password" placeholder="ghp_…" autocomplete="off" />
-<label>Default branch</label>
-<input id="input-branch" type="text" placeholder="main" />
+            // Construct Iterative Prompt
+            const projectStructure = Object.keys(state.files).join('\n');
+            const activeContent = state.files[state.activeFile];
 
-<div class="section-head">LLM APIs</div>
-<p>Keys are stored only in this browser. Leave blank to skip a provider.</p>
-<label>Gemini API Key (AI Studio)</label>
-<input id="input-gemini-key" type="password" placeholder="AIza…" autocomplete="off" />
-<label>OpenAI API Key</label>
-<input id="input-openai-key" type="password" placeholder="sk-…" autocomplete="off" />
-<label>Claude API Key (Anthropic)</label>
-<input id="input-claude-key" type="password" placeholder="sk-ant-…" autocomplete="off" />
-<p style="margin-top:8px;font-size:10px;color:var(--muted)">Note: Claude requires the <code>anthropic-dangerous-direct-browser-access</code> header and may still be blocked depending on your plan.</p>
+            const prompt = `
+SYSTEM: You are a coding assistant in DevPad.
+PROJECT STRUCTURE:
+${projectStructure}
 
-<div class="modal-actions">
-  <button class="btn btn-ghost" onclick="closeSettings()">cancel</button>
-  <button class="btn btn-primary" onclick="saveSettings()">save &amp; connect</button>
-</div>
+ACTIVE FILE (${state.activeFile}):
+${activeContent}
 
-  </div>
-</div>
+INSTRUCTIONS:
+1. If you need to see another file, respond with: READ_FILE: path/to/file
+2. To modify a file, respond with: REPLACE_FILE: path/to/file\n\`\`\`\nnew content\n\`\`\`
+3. Otherwise, answer concisely.
 
-<!-- NEW FILE -->
+USER: ${text}`;
 
-<div id="modal-newfile" class="modal-overlay" style="display:none" onclick="closeNewFileOnBg(event)">
-  <div class="modal">
-    <h2>New file</h2>
-    <p>Creates and commits a new file immediately.</p>
-    <label>File path</label>
-    <input id="input-newpath" type="text" placeholder="e.g. index.html" autocorrect="off" autocapitalize="off" />
-    <label>Initial content (optional)</label>
-    <textarea id="input-newcontent" rows="5"
-      style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);
-             border-radius:var(--radius);padding:8px 12px;font-family:var(--mono);font-size:12px;
-             outline:none;resize:vertical;margin-top:2px;"></textarea>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeNewFile()">cancel</button>
-      <button class="btn btn-primary" onclick="createNewFile()">create</button>
-    </div>
-  </div>
-</div>
+            // Simulate API call
+            addMessage('ai', "Thinking...");
+            
+            // Here you would call Gemini API with 'prompt'
+            // For now, we simulate a response
+            setTimeout(() => {
+                const lastMsg = chatMessages.lastElementChild;
+                lastMsg.textContent = "I've analyzed the structure. To help further, I'd need to see style.css if you want to change colors. Otherwise, index.html looks good.";
+            }, 1000);
+        }
 
-<script>
-/* ════════════════════════════════════════
-   STATE
-════════════════════════════════════════ */
-const S = {
-  token:'', branch:'main',
-  user:null, repos:[],
-  currentRepo:null, currentFile:null, dirty:false,
-  llm:{ gemini:'', openai:'', claude:'' },
-  chatHistory:[],
-};
+        function addMessage(role, text) {
+            const div = document.createElement('div');
+            div.className = `msg ${role}`;
+            div.textContent = text;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
 
-const MODELS = {
-  gemini: [
-  { id: 'gemini-2.5-flash',              label: 'Gemini 2.5 Flash' },
-  { id: 'gemini-2.5-flash-lite-preview', label: 'Gemini 2.5 Flash Lite' },
-  { id: 'gemini-3-flash-preview',        label: 'Gemini 3 Flash Preview' },
-],
-  openai:[
-    {id:'gpt-4o-mini', label:'GPT-4o mini'},
-    {id:'gpt-4o',      label:'GPT-4o'},
-  ],
-  claude:[
-    {id:'claude-sonnet-4-20250514',  label:'Claude Sonnet 4'},
-    {id:'claude-haiku-4-5-20251001', label:'Claude Haiku 4.5'},
-  ],
-};
-
-/* ════════════════════════════════════════
-   INIT
-════════════════════════════════════════ */
-window.onload = () => {
-  S.token       = ls('dp_token')  || '';
-  S.branch      = ls('dp_branch') || 'main';
-  S.llm.gemini  = ls('dp_gkey')   || '';
-  S.llm.openai  = ls('dp_okey')   || '';
-  S.llm.claude  = ls('dp_ckey')   || '';
-  populateModels('gemini');
-  if (S.token) connectGitHub();
-};
-
-function ls(k, v) {
-  if (v !== undefined) return localStorage.setItem(k, v);
-  return localStorage.getItem(k) || '';
-}
-
-/* ════════════════════════════════════════
-   TABS
-════════════════════════════════════════ */
-function switchTab(t) {
-  document.getElementById('tab-editor').classList.toggle('active', t==='editor');
-  document.getElementById('tab-chat').classList.toggle('active',   t==='chat');
-  document.getElementById('editor-view').classList.toggle('hidden', t!=='editor');
-  document.getElementById('chat-view').classList.toggle('hidden',   t!=='chat');
-  if (t==='chat') scrollChatBottom();
-}
-
-/* ════════════════════════════════════════
-   GITHUB
-════════════════════════════════════════ */
-async function gh(path, opts={}) {
-  const url = path.startsWith('http') ? path : 'https://api.github.com' + path;
-  const res = await fetch(url, {
-    ...opts,
-    headers:{
-      'Authorization':'Bearer '+S.token,
-      'Accept':'application/vnd.github+json',
-      'X-GitHub-Api-Version':'2022-11-28',
-      ...(opts.headers||{}),
-    },
-  });
-  if (!res.ok) { const e=await res.json().catch(()=>({message:res.statusText})); throw new Error(e.message||res.statusText); }
-  return res.status===204 ? null : res.json();
-}
-
-async function connectGitHub() {
-  setStatus('connecting…','');
-  try {
-    S.user = await gh('/user');
-    setStatus(S.user.login,'ok');
-    toast('Connected as '+S.user.login,'ok');
-    await loadRepos();
-  } catch(e) { setStatus('failed','err'); toast('GitHub: '+e.message,'err'); }
-}
-
-async function loadRepos() {
-  const repos = await gh('/user/repos?per_page=100&sort=updated');
-  S.repos = repos;
-  const sel = document.getElementById('repo-select');
-  sel.innerHTML = '<option value="">— repo —</option>';
-  repos.forEach(r => { const o=document.createElement('option'); o.value=r.full_name; o.textContent=r.name; sel.appendChild(o); });
-  setTree([{type:'msg',text:'select a repo above'}]);
-}
-
-async function loadRepo(fullName) {
-  if (!fullName) return;
-  const r = S.repos.find(x=>x.full_name===fullName);
-  if (!r) return;
-  S.currentRepo = {owner:r.owner.login, name:r.name, default_branch:r.default_branch};
-  S.branch = ls('dp_branch') || r.default_branch;
-  document.getElementById('header-path').innerHTML = `<span>${r.name}</span> <span style="color:var(--accent2)">:${S.branch}</span>`;
-  setTree([{type:'msg',text:'loading…'}]);
-  try {
-    const tree = await gh(`/repos/${S.currentRepo.owner}/${S.currentRepo.name}/git/trees/${S.branch}?recursive=1`);
-    renderTree(tree.tree);
-    updatePagesLink();
-  } catch(e) { toast('Tree: '+e.message,'err'); setTree([{type:'msg',text:'error loading tree'}]); }
-}
-
-function renderTree(items) {
-  const root={};
-  items.filter(i=>i.type==='blob').forEach(item=>{
-    const parts=item.path.split('/');
-    let cur=root;
-    for (let i=0;i<parts.length-1;i++){
-      if(!cur[parts[i]]) cur[parts[i]]={};
-      cur=cur[parts[i]];
-    }
-    cur[parts[parts.length-1]]={__file:true, path:item.path};
-  });
-  const c=document.getElementById('file-tree');
-  c.innerHTML='';
-  buildTreeDOM(root,c);
-}
-
-function buildTreeDOM(node, container) {
-  const entries=Object.entries(node);
-  const dirs=entries.filter(([,v])=>!v.__file);
-  const files=entries.filter(([,v])=>v.__file);
-  [...dirs,...files].forEach(([name,val])=>{
-    if (val.__file) {
-      const el=document.createElement('div');
-      el.className='tree-item'; el.dataset.path=val.path;
-      el.innerHTML=`<span class="icon">${fileIcon(name)}</span>${name}`;
-      el.onclick=()=>openFile(val.path,el);
-      container.appendChild(el);
-    } else {
-      const dir=document.createElement('div');
-      dir.className='tree-item dir';
-      dir.innerHTML=`<span class="icon">▸</span>${name}`;
-      container.appendChild(dir);
-      const ch=document.createElement('div');
-      ch.className='tree-folder-children'; ch.style.display='none';
-      container.appendChild(ch);
-      dir.onclick=()=>{
-        const open=ch.style.display!=='none';
-        ch.style.display=open?'none':'block';
-        dir.querySelector('.icon').textContent=open?'▸':'▾';
-      };
-      buildTreeDOM(val,ch);
-    }
-  });
-}
-
-function setTree(items) {
-  const c=document.getElementById('file-tree'); c.innerHTML='';
-  items.forEach(i=>{ if(i.type==='msg'){const el=document.createElement('div');el.className='tree-item loading';el.style.cssText='justify-content:center;padding-top:24px';el.textContent=i.text;c.appendChild(el);} });
-}
-
-/* ════════════════════════════════════════
-   FILE OPEN / EDIT
-════════════════════════════════════════ */
-async function openFile(path, el) {
-  if (S.dirty && !confirm('Discard unsaved changes?')) return;
-  document.querySelectorAll('.tree-item.active').forEach(e=>e.classList.remove('active'));
-  el.classList.add('active');
-  if (window.innerWidth<=640) document.getElementById('sidebar').classList.remove('open');
-  try {
-    const data = await gh(`/repos/${S.currentRepo.owner}/${S.currentRepo.name}/contents/${path}?ref=${S.branch}`);
-    const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
-    S.currentFile = {path:data.path, sha:data.sha, content};
-    const ed=document.getElementById('editor');
-    ed.value=content; ed.style.display='block';
-    document.getElementById('editor-placeholder').style.display='none';
-    document.getElementById('file-label').innerHTML=`<span>${path}</span>`;
-    document.getElementById('lang-badge').textContent=langFromPath(path);
-    document.getElementById('lang-badge').style.display='';
-    document.getElementById('ctx-name').textContent=path.split('/').pop();
-    document.getElementById('commit-msg').value=`update ${path.split('/').pop()}`;
-    document.getElementById('btn-commit').disabled=false;
-    document.getElementById('status-file').textContent=path;
-    setDirty(false);
-  } catch(e) { toast('Could not open: '+e.message,'err'); }
-}
-
-function onEditorInput() {
-  if (!S.currentFile) return;
-  setDirty(document.getElementById('editor').value !== S.currentFile.content);
-}
-
-function setDirty(v) {
-  S.dirty=v;
-  document.getElementById('dirty-badge').style.display=v?'':'none';
-  document.getElementById('btn-discard').style.display=v?'':'none';
-}
-
-function discardChanges() {
-  if (!S.currentFile) return;
-  document.getElementById('editor').value=S.currentFile.content;
-  setDirty(false); toast('Discarded','inf');
-}
-
-/* ════════════════════════════════════════
-   COMMIT
-════════════════════════════════════════ */
-async function commitFile() {
-  if (!S.currentFile||!S.currentRepo) return;
-  const content=document.getElementById('editor').value;
-  const message=document.getElementById('commit-msg').value.trim()||`update ${S.currentFile.path}`;
-  const btn=document.getElementById('btn-commit');
-  btn.disabled=true; btn.textContent='committing…';
-  try {
-    const res = await gh(
-      `/repos/${S.currentRepo.owner}/${S.currentRepo.name}/contents/${S.currentFile.path}`,
-      { method:'PUT', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ message, branch:S.branch, sha:S.currentFile.sha,
-          content:btoa(unescape(encodeURIComponent(content))) }) }
-    );
-    S.currentFile.sha=res.content.sha; S.currentFile.content=content;
-    setDirty(false); toast('Committed ✓','ok');
-  } catch(e) { toast('Commit failed: '+e.message,'err'); }
-  btn.disabled=false; btn.textContent='commit';
-}
-
-/* ════════════════════════════════════════
-   LLM CHAT
-════════════════════════════════════════ */
-function populateModels(provider) {
-  const sel=document.getElementById('llm-model'); sel.innerHTML='';
-  MODELS[provider].forEach(m=>{ const o=document.createElement('option'); o.value=m.id; o.textContent=m.label; sel.appendChild(o); });
-}
-
-function onProviderChange() { populateModels(document.getElementById('llm-provider').value); }
-
-function getKey() {
-  const p=document.getElementById('llm-provider').value;
-  return p==='gemini'?S.llm.gemini : p==='openai'?S.llm.openai : S.llm.claude;
-}
-
-function buildSystem() {
-  let s='You are a helpful coding assistant in a browser-based code editor. ';
-  s+='When you write code meant to replace the open file, put the entire file content in a single ```code block. ';
-  s+='Be concise unless asked for detail.';
-  if (S.currentFile) {
-    s+=`\n\nOpen file (${S.currentFile.path}):\n\`\`\`\n`;
-    s+=document.getElementById('editor').value.slice(0,8000);
-    s+='\n```';
-  }
-  return s;
-}
-
-async function sendChat() {
-  const input=document.getElementById('chat-input');
-  const text=input.value.trim();
-  if (!text) return;
-  const key=getKey();
-  if (!key) { toast('Add an API key in ⚙ Settings','err'); return; }
-  input.value=''; autoResize(input);
-  appendBubble('user',text);
-  S.chatHistory.push({role:'user',content:text});
-  const thinking=appendBubble('thinking','thinking…');
-  try {
-    const prov=document.getElementById('llm-provider').value;
-    const model=document.getElementById('llm-model').value;
-    let reply='';
-    if      (prov==='gemini') reply=await callGemini(key,model);
-    else if (prov==='openai') reply=await callOpenAI(key,model);
-    else                      reply=await callClaude(key,model);
-    thinking.remove();
-    S.chatHistory.push({role:'assistant',content:reply});
-    appendAssistant(reply);
-  } catch(e) { thinking.remove(); appendBubble('error','Error: '+e.message); }
-}
-
-async function callGemini(key,model) {
-  const contents=S.chatHistory.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}));
-  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-    { method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({system_instruction:{parts:[{text:buildSystem()}]},contents}) });
-  if (!res.ok){const e=await res.json();throw new Error(e.error?.message||res.statusText);}
-  const d=await res.json();
-  return d.candidates?.[0]?.content?.parts?.[0]?.text||'(no response)';
-}
-
-async function callOpenAI(key,model) {
-  const messages=[{role:'system',content:buildSystem()},...S.chatHistory];
-  const res=await fetch('https://api.openai.com/v1/chat/completions',
-    { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model,messages,max_tokens:2048}) });
-  if (!res.ok){const e=await res.json();throw new Error(e.error?.message||res.statusText);}
-  const d=await res.json();
-  return d.choices?.[0]?.message?.content||'(no response)';
-}
-
-async function callClaude(key,model) {
-  const messages=S.chatHistory.map(m=>({role:m.role,content:m.content}));
-  const res=await fetch('https://api.anthropic.com/v1/messages',
-    { method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':key,
-               'anthropic-version':'2023-06-01',
-               'anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model,max_tokens:2048,system:buildSystem(),messages}) });
-  if (!res.ok){const e=await res.json();throw new Error(e.error?.message||res.statusText);}
-  const d=await res.json();
-  return d.content?.[0]?.text||'(no response)';
-}
-
-function appendBubble(role, text) {
-  const w=document.getElementById('chat-messages');
-  const el=document.createElement('div'); el.className='msg '+role;
-  el.textContent=text; w.appendChild(el); scrollChatBottom(); return el;
-}
-
-function appendAssistant(content) {
-  const w=document.getElementById('chat-messages');
-  const el=document.createElement('div'); el.className='msg assistant';
-  let extractedCode=null;
-
-  // Parse code blocks
-  const parts=content.split(/(```[\s\S]*?```)/g);
-  parts.forEach(part=>{
-    if (part.startsWith('```')&&part.endsWith('```')) {
-      const inner=part.slice(3,-3);
-      const lines=inner.split('\n');
-      const code=lines[0].match(/^[a-z]+$/i)?lines.slice(1).join('\n').trim():inner.trim();
-      extractedCode=code;
-      const pre=document.createElement('pre'); pre.textContent=code; el.appendChild(pre);
-    } else if (part.trim()) {
-      const span=document.createElement('span'); span.className='prose'; span.textContent=part; el.appendChild(span);
-    }
-  });
-
-  // Action buttons
-  const actions=document.createElement('div'); actions.className='msg-actions';
-
-  if (extractedCode!==null) {
-    const applyBtn=document.createElement('button');
-    applyBtn.className='btn btn-teal btn-sm'; applyBtn.textContent='← Apply to editor';
-    const code=extractedCode;
-    applyBtn.onclick=()=>{
-      if (!S.currentFile){toast('Open a file first','inf');return;}
-      document.getElementById('editor').value=code; onEditorInput();
-      switchTab('editor'); toast('Applied to editor','ok');
-    };
-    actions.appendChild(applyBtn);
-  }
-
-  const copyBtn=document.createElement('button');
-  copyBtn.className='btn btn-ghost btn-sm'; copyBtn.textContent='copy';
-  copyBtn.onclick=()=>{navigator.clipboard.writeText(content);toast('Copied','inf');};
-  actions.appendChild(copyBtn);
-  el.appendChild(actions);
-
-  w.appendChild(el); scrollChatBottom();
-}
-
-function clearChat() {
-  S.chatHistory=[];
-  document.getElementById('chat-messages').innerHTML='';
-  appendBubble('assistant','Chat cleared. What would you like to work on?');
-}
-
-function scrollChatBottom() { const w=document.getElementById('chat-messages'); w.scrollTop=w.scrollHeight; }
-
-function chatKeydown(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();} }
-
-function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
-
-/* ════════════════════════════════════════
-   NEW FILE
-════════════════════════════════════════ */
-function openNewFile() { if(!S.currentRepo){toast('Select a repo first','inf');return;} document.getElementById('input-newpath').value=''; document.getElementById('input-newcontent').value=''; document.getElementById('modal-newfile').style.display='flex'; }
-function closeNewFile() { document.getElementById('modal-newfile').style.display='none'; }
-function closeNewFileOnBg(e) { if(e.target===e.currentTarget)closeNewFile(); }
-
-async function createNewFile() {
-  const path=document.getElementById('input-newpath').value.trim();
-  if(!path){toast('Enter a path','inf');return;}
-  const content=document.getElementById('input-newcontent').value;
-  try {
-    await gh(`/repos/${S.currentRepo.owner}/${S.currentRepo.name}/contents/${path}`,
-      {method:'PUT',headers:{'Content-Type':'application/json'},
-       body:JSON.stringify({message:`create ${path}`,content:btoa(unescape(encodeURIComponent(content))),branch:S.branch})});
-    toast('Created '+path,'ok'); closeNewFile();
-    await loadRepo(`${S.currentRepo.owner}/${S.currentRepo.name}`);
-  } catch(e){toast('Create failed: '+e.message,'err');}
-}
-
-/* ════════════════════════════════════════
-   SETTINGS
-════════════════════════════════════════ */
-function openSettings() {
-  document.getElementById('input-token').value=S.token;
-  document.getElementById('input-branch').value=S.branch;
-  document.getElementById('input-gemini-key').value=S.llm.gemini;
-  document.getElementById('input-openai-key').value=S.llm.openai;
-  document.getElementById('input-claude-key').value=S.llm.claude;
-  document.getElementById('modal-settings').style.display='flex';
-}
-function closeSettings(){document.getElementById('modal-settings').style.display='none';}
-function closeSettingsOnBg(e){if(e.target===e.currentTarget)closeSettings();}
-
-async function saveSettings() {
-  const token=document.getElementById('input-token').value.trim();
-  const branch=document.getElementById('input-branch').value.trim()||'main';
-  if(!token){toast('GitHub token required','err');return;}
-  S.token=token; S.branch=branch;
-  S.llm.gemini=document.getElementById('input-gemini-key').value.trim();
-  S.llm.openai=document.getElementById('input-openai-key').value.trim();
-  S.llm.claude=document.getElementById('input-claude-key').value.trim();
-  ls('dp_token',token); ls('dp_branch',branch);
-  ls('dp_gkey',S.llm.gemini); ls('dp_okey',S.llm.openai); ls('dp_ckey',S.llm.claude);
-  closeSettings(); await connectGitHub();
-}
-
-/* ════════════════════════════════════════
-   MISC
-════════════════════════════════════════ */
-function updatePagesLink() {
-  if(!S.currentRepo)return;
-  const l=document.getElementById('pages-link');
-  l.href=`https://${S.currentRepo.owner}.github.io/${S.currentRepo.name}/`;
-  l.style.display='';
-}
-
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
-
-function setStatus(text,st){
-  document.getElementById('status-text').textContent=text;
-  document.getElementById('status-dot').className='dot'+(st?' '+st:'');
-}
-
-function toast(msg,type='inf'){
-  const c=document.getElementById('toast-container');
-  const el=document.createElement('div'); el.className='toast '+type; el.textContent=msg;
-  c.appendChild(el); setTimeout(()=>el.remove(),3200);
-}
-
-function fileIcon(n){const e=n.split('.').pop().toLowerCase();return{js:'📜',ts:'📘',jsx:'⚛',tsx:'⚛',html:'🌐',css:'🎨',json:'📋',md:'📝',py:'🐍',sh:'⚙',yml:'⚙',yaml:'⚙',svg:'🖼',png:'🖼',jpg:'🖼',txt:'📄'}[e]||'📄';}
-
-function langFromPath(p){const e=p.split('.').pop().toLowerCase();return{js:'JavaScript',ts:'TypeScript',jsx:'React',tsx:'React',html:'HTML',css:'CSS',json:'JSON',md:'Markdown',py:'Python',sh:'Shell',yml:'YAML',yaml:'YAML',svg:'SVG',txt:'Text'}[e]||e.toUpperCase();}
-
-document.addEventListener('keydown',e=>{
-  if((e.metaKey||e.ctrlKey)&&e.key==='s'){e.preventDefault();if(!document.getElementById('btn-commit').disabled)commitFile();}
-});
-</script>
-
+        init();
+    </script>
 </body>
 </html>
