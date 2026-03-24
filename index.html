@@ -421,7 +421,6 @@ transform:translateX(-100%); transition:transform .2s ease;
   <button class="btn btn-ghost" onclick="closeSettings()">cancel</button>
   <button class="btn btn-primary" onclick="saveSettings()">save &amp; connect</button>
 </div>
-```
 
   </div>
 </div>
@@ -459,11 +458,11 @@ const S = {
 };
 
 const MODELS = {
-  gemini:[
-    {id:'gemini-2.0-flash',               label:'Gemini 2.0 Flash'},
-    {id:'gemini-2.5-flash-preview-04-17', label:'Gemini 2.5 Flash Preview'},
-    {id:'gemini-2.0-flash-lite',          label:'Gemini 2.0 Flash Lite'},
-  ],
+  gemini: [
+  { id: 'gemini-2.5-flash',              label: 'Gemini 2.5 Flash' },
+  { id: 'gemini-2.5-flash-lite-preview', label: 'Gemini 2.5 Flash Lite' },
+  { id: 'gemini-3-flash-preview',        label: 'Gemini 3 Flash Preview' },
+],
   openai:[
     {id:'gpt-4o-mini', label:'GPT-4o mini'},
     {id:'gpt-4o',      label:'GPT-4o'},
