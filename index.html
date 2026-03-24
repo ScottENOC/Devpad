@@ -365,6 +365,7 @@ const MODELS = {
 };
 
 const MAX_ROUNDS = 6;
+const MAX_CHAT_MESSAGES_FOR_SUMMARY = 10; // Number of messages before summarization is triggered
 
 /* ══════════════════════════════════════════════════════
    INIT
@@ -608,21 +609,33 @@ async function runAgent() {
 
   document.getElementById('agent-input').value='';
   autoResize(document.getElementById('agent-input'));
-  S.agentRunning=true;
-  S.pendingChanges=[];
-  setReviewBar(false);
-  document.getElementById('btn-run').disabled=true;
 
-  clearLog();
+  // If starting a new task, clear previous agent state and history
+  if (!S.agentRunning) {
+    clearLog();
+    S.agentMessages = []; // Clear history for a new task
+    S.pendingChanges = [];
+    setReviewBar(false);
+  }
+  S.agentRunning = true;
+  document.getElementById('btn-run').disabled = true;
+
   logEntry('🎯','accent',`Task: ${task}`);
   logEntry('📁','muted',`Repo: ${S.currentRepo.owner}/${S.currentRepo.name} (${S.fileTree.length} files)`);
 
-  const messages = [];
   const fileTreeText = S.fileTree.join('\n');
 
-  // Initial user message
-  const firstMsg = `File tree:\n${fileTreeText}\n\nTask: ${task}`;
-  messages.push({role:'user', content:firstMsg});
+  // Summarize history if it gets too long
+  if (S.agentMessages.length > MAX_CHAT_MESSAGES_FOR_SUMMARY) {
+    logEntry('🧠', 'accent2', 'Summarizing chat history...');
+    const summaryMessages = await summarizeChatHistory(S.agentMessages, key, agentSystemPrompt());
+    S.agentMessages = summaryMessages; // Replace old history with summary
+    logEntry('📝', 'accent2', 'History summarized.');
+  }
+
+  // Add the current turn's user message to the history
+  const currentTurnUserMessage = `File tree:\n${fileTreeText}\n\nTask: ${task}`;
+  S.agentMessages.push({role:'user', content:currentTurnUserMessage});
 
   let round = 0;
   while (round < MAX_ROUNDS) {
@@ -631,7 +644,7 @@ async function runAgent() {
 
     let raw;
     try {
-      raw = await callLLM(messages, agentSystemPrompt(), key);
+      raw = await callLLM(S.agentMessages, agentSystemPrompt(), key); // Pass S.agentMessages
     } catch(e) {
       thinking.remove();
       logEntry('✗','err','LLM error: '+e.message);
@@ -650,8 +663,8 @@ async function runAgent() {
       break;
     }
 
-    // Push assistant turn
-    messages.push({role:'assistant', content:raw});
+    // Push assistant turn to S.agentMessages
+    S.agentMessages.push({role:'assistant', content:raw});
 
     if (resp.action === 'read_files') {
       const files = resp.files || [];
@@ -672,7 +685,8 @@ async function runAgent() {
           logEntry('✗','err',`Failed to read ${f}: ${e.message}`);
         }
       }
-      messages.push({role:'user', content: fileContents.join('\n')});
+      // Add file contents as a user message to S.agentMessages
+      S.agentMessages.push({role:'user', content: fileContents.join('\n')});
 
     } else if (resp.action === 'edit') {
       const changes = resp.changes || [];
@@ -786,6 +800,35 @@ function cancelAgent() {
   S.pendingChanges=[];
   setReviewBar(false);
   logEntry('✕','muted','Changes discarded.');
+}
+
+/* ══════════════════════════════════════════════════════
+   AGENT — CHAT HISTORY SUMMARY
+══════════════════════════════════════════════════════ */
+const SUMMARY_PROMPT = "Summarize the following conversation between a user and an agent. Focus on the key decisions, actions taken by the agent, and the current state of the task. Keep the summary concise and under 500 tokens. The summary should be from the perspective of an observer, describing the agent's progress.";
+
+async function summarizeChatHistory(historyMessages, key, systemPrompt) {
+  const prov = document.getElementById('llm-provider').value;
+  const model = document.getElementById('llm-model').value;
+
+  // Create a temporary messages array for the summarization LLM call
+  // Include the system prompt and the history messages
+  const messagesForSummary = [
+    { role: 'user', content: SUMMARY_PROMPT + '\n\nConversation:\n' + historyMessages.map(m => `${m.role}: ${m.content}`).join('\n') }
+  ];
+
+  let summaryText;
+  try {
+    summaryText = await callLLM(messagesForSummary, systemPrompt, key);
+  } catch (e) {
+    logEntry('✗', 'err', 'Failed to summarize chat history: ' + e.message);
+    // If summarization fails, return a truncated version of the original history
+    // Keep the last few messages to maintain some context
+    return historyMessages.slice(-5); // Keep last 5 messages if summary fails
+  }
+
+  // Return a new messages array with the summary as the first user message
+  return [{ role: 'user', content: `Previous conversation summary: ${summaryText}` }];
 }
 
 /* ══════════════════════════════════════════════════════
